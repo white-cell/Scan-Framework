@@ -51,8 +51,10 @@ class Scan(threading.Thread):
                     output(RETURN)
             output('Complete scan target:%s'%ip, 'green')
     def Find(self,ip):
+        for port in xrange(70,16000):
+            port_queue.put(port)
         threads = []
-        scan_threads=[FindDomain(ip)for i in xrange(100)]
+        scan_threads=[FindDomain(ip,port_queue)for i in xrange(100)]
         threads.extend(scan_threads)
         [thread.start() for thread in threads]
         for thread in threads:
@@ -62,7 +64,7 @@ class Scan(threading.Thread):
         return self.Domain
 #挖掘web
 class FindDomain(threading.Thread):
-    def __init__(self,ip):
+    def __init__(self,ip,port_queue):
         threading.Thread.__init__(self)
         self.port_queue = port_queue
         self.ip = ip
@@ -178,8 +180,6 @@ def start():
         print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
         for ip in get_ip_list(sys.argv[1]):
             ip_queue.put(ip)
-        for port in xrange(70,16000):
-            port_queue.put(port)
 
         plugins_flag = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), 'Use all plugins? [Y/n/q] '),'green'))
         plugins_flag = plugins_flag[0:1]
