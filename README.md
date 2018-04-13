@@ -13,6 +13,10 @@ python Scan.py
 
 Usage: python Scan.py 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini
 ```
+# 文件结构
+* /lib/config.py 配置文件，配置一些全局变量，增加变量需引入
+* /plugins/  插件目录，将写好的插件放在此目录下就可以使用
+
 # 插件格式
 * WEB类漏洞插件格式
 ``` python

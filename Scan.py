@@ -87,8 +87,8 @@ class FindDomain(threading.Thread):
                 except Exception, e:
                     logging.error(e)
                     resp.encoding = 'utf-8'
-                soup = BeautifulSoup(resp.content)
                 try:
+                    soup = BeautifulSoup(resp.content,"html.parser")
                     title = soup.title.string
                 except Exception, e:
                     logging.error(e)
