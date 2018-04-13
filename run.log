@@ -1,1 +1,2 @@
-2018-04-13 21:27:01,942 Scan.py[line:96] ERROR <'NoneType' object has no attribute 'string'>
+2018-04-13 22:18:34,951 Scan.py[line:76] ERROR <'NoneType' object has no attribute 'string'>
+2018-04-13 22:18:35,182 crack_redis.py[line:35] ERROR <45.78.54.37 [Errno 61] Connection refused>

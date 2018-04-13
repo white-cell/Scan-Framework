@@ -23,7 +23,6 @@ from lib.config import (
 )
 requests.packages.urllib3.disable_warnings()
 ip_queue = Queue.Queue()
-port_queue = Queue.Queue()
 Lock = threading.Lock()
 plugin_info_list = []#插件信息列表
 imported_plugins = []#已引入插件列表
@@ -39,7 +38,7 @@ class Scan(threading.Thread):
             ip = self.ip_queue.get()
             output('Starting scan target:%s'%ip, 'green')
             if FindDomain_flag != 'n':
-                self.Domain = self.Find(ip)
+                self.Domain = self.FindDomain(ip)
             for plugin in imported_plugins:
                 setattr(plugin, "FindDomain_flag", FindDomain_flag)
                 setattr(plugin, "Domain", self.Domain)
@@ -50,30 +49,11 @@ class Scan(threading.Thread):
                 elif RETURN and type(RETURN)==str:
                     output(RETURN)
             output('Complete scan target:%s'%ip, 'green')
-    def Find(self,ip):
-        for port in xrange(70,16000):
-            port_queue.put(port)
-        threads = []
-        scan_threads=[FindDomain(ip,port_queue)for i in xrange(100)]
-        threads.extend(scan_threads)
-        [thread.start() for thread in threads]
-        for thread in threads:
-            thread.join()
-            if thread.result():
-                self.Domain.append(thread.result())
-        return self.Domain
-#挖掘web
-class FindDomain(threading.Thread):
-    def __init__(self,ip,port_queue):
-        threading.Thread.__init__(self)
-        self.port_queue = port_queue
-        self.ip = ip
-        self.domain = ''
-    def run(self):
-        while not self.port_queue.empty():
-            port = self.port_queue.get()
-            url1 = "http://%s:%d"%(self.ip,port)
-            url2 = "https://%s:%d"%(self.ip,port)
+    def FindDomain(self,ip):
+        Domain = []
+        for port in xrange(70,81):
+            url1 = "http://%s:%d"%(ip,port)
+            url2 = "https://%s:%d"%(ip,port)
             try:
                 resp = requests.get(url1,timeout=3)#越小效率越高，过小时准确度受影响
                 flag = 1
@@ -96,13 +76,13 @@ class FindDomain(threading.Thread):
                     logging.error(e)
                     title = 'Null'
                 if flag == 1:
-                    self.domain = url1
+                    domain = url1
                 if flag == 2:
-                    self.domain = url2
-                output("WEB %s >>>> %s"%(self.domain,title),'green')
-    def result(self):
-        if self.domain:
-            return self.domain
+                    domain = url2
+                output("WEB %s >>>> %s"%(domain,title),'green')
+                Domain.append(domain)
+        return Domain
+
 #转换ip格式
 def get_ip_list(ip):
     ip_list = []
