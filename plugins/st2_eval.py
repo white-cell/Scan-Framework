@@ -69,9 +69,10 @@ def eval(url_list):
 
 def exploit(ip):
     result = []
-    if Domain:
-        for domain in Domain:
-            url_list = get_url(domain)
-            if url_list:
-                result.append(eval(url_list))
-        return result
+    if FindDomain_flag != 'n':
+        if Domain:
+            for domain in Domain:
+                url_list = get_url(domain)
+                if url_list:
+                    result.append(eval(url_list))
+            return result

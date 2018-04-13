@@ -40,9 +40,10 @@ def TomcatGetshell(domain):
 
 def exploit(ip):
     result = []
-    if Domain:
-        for domain in Domain:
-            RETURN = TomcatGetshell(domain)
-            if RETURN:
-                result.append(RETURN)
-        return result
+    if FindDomain_flag != 'n':
+        if Domain:
+            for domain in Domain:
+                RETURN = TomcatGetshell(domain)
+                if RETURN:
+                    result.append(RETURN)
+            return result

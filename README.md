@@ -27,10 +27,11 @@ from lib.config import (
 )
 def exploit(ip):
     result = []
-    if Domain:
-        for domain in Domain:
-            result.append(attack(domain))
-        return result
+    if FindDomain_flag != 'n':
+        if Domain:
+            for domain in Domain:
+                result.append(attack(domain))
+            return result
 ```
 * 端口类漏洞插件格式
 ```python

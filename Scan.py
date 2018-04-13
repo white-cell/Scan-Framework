@@ -25,7 +25,6 @@ requests.packages.urllib3.disable_warnings()
 ip_queue = Queue.Queue()
 port_queue = Queue.Queue()
 Lock = threading.Lock()
-script_plugin = []#py插件列表
 plugin_info_list = []#插件信息列表
 imported_plugins = []#已引入插件列表
 
@@ -34,14 +33,16 @@ class Scan(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.ip_queue = ip_queue
+        self.Domain = []#开放web
     def run(self):
         while not self.ip_queue.empty():
             ip = self.ip_queue.get()
             output('Starting scan target:%s'%ip, 'green')
-            Domain = self.Find(ip)
+            if FindDomain_flag != 'n':
+                self.Domain = self.Find(ip)
             for plugin in imported_plugins:
-                setattr(plugin, "PASSWORD_DIC", PASSWORD_DIC)
-                setattr(plugin, "Domain", Domain)
+                setattr(plugin, "FindDomain_flag", FindDomain_flag)
+                setattr(plugin, "Domain", self.Domain)
                 RETURN = plugin.exploit(ip)
                 if RETURN and type(RETURN)==list:
                     for i in RETURN:
@@ -51,15 +52,14 @@ class Scan(threading.Thread):
             output('Complete scan target:%s'%ip, 'green')
     def Find(self,ip):
         threads = []
-        Domain = []#开放web
         scan_threads=[FindDomain(ip)for i in xrange(100)]
         threads.extend(scan_threads)
         [thread.start() for thread in threads]
         for thread in threads:
             thread.join()
             if thread.result():
-                Domain.append(thread.result())
-        return Domain
+                self.Domain.append(thread.result())
+        return self.Domain
 #挖掘web
 class FindDomain(threading.Thread):
     def __init__(self,ip):
@@ -140,12 +140,18 @@ def get_ip_list(ip):
             sys.exit(0)
     return ip_list
 #标准化输出
-def output(info, color='white'):
-        print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color)
+def output(info, color='white', on_color=None, attrs=None):
+        print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color, on_color, attrs)
 def KeyboardInterrupt(signum,frame):
-    print '\n[*] shutting down at %s by control+c\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
+    output('[ERROR] user quit','red')
+    print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
     sys.exit(0)
+
+
 def start():
+    script_plugin = []
+    global FindDomain_flag
+    FindDomain_flag = 'y'#是否探测web端口标志位
     signal.signal(signal.SIGINT,KeyboardInterrupt)
     signal.signal(signal.SIGTERM,KeyboardInterrupt)
     print colored("""
@@ -168,23 +174,39 @@ def start():
                     script_plugin.append(filename.split('.')[0])
         except Exception, e:
             logging.error(e)
-    for plugin_name in script_plugin:
-        try:
-            if plugin_name in ['st2-045','st2_eval','crack_redis','tomcatgetshell']:#调试
+    if len(sys.argv) == 2:
+        print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
+        for ip in get_ip_list(sys.argv[1]):
+            ip_queue.put(ip)
+        for port in xrange(70,81):
+            port_queue.put(port)
+
+        plugins_flag = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), 'Use all plugins? [Y/n/q] '),'green'))
+        plugins_flag = plugins_flag[0:1]
+        plugins_flag = plugins_flag.lower()
+        if plugins_flag == 'q':
+            KeyboardInterrupt(0,0)
+        elif plugins_flag == 'n':
+            print colored("PLUGINS: "+str(script_plugin), color='grey', on_color='on_white')
+            select_plugins = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())),'Please input which plugin you want? [use , split] '),'green'))
+            select_plugins = select_plugins.replace(' ','').replace('\'','')
+            script_plugin = select_plugins.split(',')
+
+        FindDomain_flag = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())),'Use find domain? [Y/n/q] '),'green'))
+        FindDomain_flag = FindDomain_flag[0:1]
+        FindDomain_flag = FindDomain_flag.lower()
+        if FindDomain_flag == 'q':
+            KeyboardInterrupt(0,0)
+        for plugin_name in script_plugin:
+            try:
                 imported_plugin = __import__(plugin_name)
                 imported_plugins.append(imported_plugin)
                 plugin_info = imported_plugin.get_plugin_info()
                 plugin_info['filename'] = plugin_name
                 plugin_info['count'] = 0
                 plugin_info_list.append(plugin_info)
-        except Exception, e:
-            logging.error(e)
-    if len(sys.argv) == 2:
-        print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
-        for ip in get_ip_list(sys.argv[1]):
-            ip_queue.put(ip)
-        for port in xrange(70,16000):
-            port_queue.put(port)
+            except Exception, e:
+                logging.error(e)
         threads = []
         for i in xrange(THREAD_COUNT):
             scan_threads=Scan()
@@ -202,7 +224,6 @@ def start():
         usage()
 def usage():
     print "Usage: python "+sys.argv[0]+" 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini\n"
-    print "PLUGINS: "+colored(script_plugin,'green')
 
 if __name__ == '__main__':
     start()
