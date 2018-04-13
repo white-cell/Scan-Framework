@@ -178,7 +178,7 @@ def start():
         print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
         for ip in get_ip_list(sys.argv[1]):
             ip_queue.put(ip)
-        for port in xrange(70,81):
+        for port in xrange(70,16000):
             port_queue.put(port)
 
         plugins_flag = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), 'Use all plugins? [Y/n/q] '),'green'))
