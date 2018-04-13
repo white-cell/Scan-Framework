@@ -70,4 +70,5 @@ def exploit(ip):
                         result.append(url+" >>>> 存在S2_048代码执行漏洞")
                 except Exception, e:
                     logging.error(e)
-            return result
+            if len(result):
+                return result

@@ -31,7 +31,8 @@ def exploit(ip):
         if Domain:
             for domain in Domain:
                 result.append(attack(domain))
-            return result
+            if len(result):
+                return result
 ```
 * 端口类漏洞插件格式
 ```python
@@ -45,7 +46,8 @@ def exploit(ip):
     port = 端口
     try:
         #
-        return result
+        if 存在漏洞:
+            return result
     except Exception, e:
         logging.error(ip+' '+str(e))
         pass

@@ -75,4 +75,5 @@ def exploit(ip):
                 url_list = get_url(domain)
                 if url_list:
                     result.append(eval(url_list))
-            return result
+            if len(result):
+                return result

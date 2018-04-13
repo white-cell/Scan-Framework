@@ -46,4 +46,5 @@ def exploit(ip):
                 RETURN = TomcatGetshell(domain)
                 if RETURN:
                     result.append(RETURN)
-            return result
+            if len(result):
+                return result
