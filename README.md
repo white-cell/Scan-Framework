@@ -30,7 +30,8 @@ def exploit(ip):
     if FindDomain_flag != 'n':
         if Domain:
             for domain in Domain:
-                result.append(attack(domain))
+                #poc
+                result.append('%s >>>> 存在xxx漏洞'%domain)
             if len(result):
                 return result
 ```
@@ -45,9 +46,9 @@ from lib.config import (
 def exploit(ip):
     port = 端口
     try:
-        #
+        #poc
         if 存在漏洞:
-            return result
+            return '%s >>>> 存在xxx漏洞'%ip
     except Exception, e:
         logging.error(ip+' '+str(e))
         pass

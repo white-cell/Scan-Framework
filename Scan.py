@@ -51,7 +51,7 @@ class Scan(threading.Thread):
             output('Complete scan target:%s'%ip, 'green')
     def FindDomain(self,ip):
         Domain = []
-        for port in xrange(70,81):
+        for port in xrange(70,16000):
             url1 = "http://%s:%d"%(ip,port)
             url2 = "https://%s:%d"%(ip,port)
             try:
