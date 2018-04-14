@@ -29,6 +29,7 @@ optional arguments:
 # 文件结构
 * /lib/config.py 配置文件，配置一些全局变量，增加变量需引入
 * /plugins/  插件目录，将写好的插件放在此目录下就可以使用
+* /result.txt 每次运行的结果都会存在里面
 
 # 插件格式
 * WEB类漏洞插件格式

@@ -1,0 +1,10 @@
+SET TIME_OUT=5 THREAD_COUNT=100
+Starting scan target:192.168.216.6
+WEB http://192.168.216.6:81 >>>> S2-016
+WEB http://192.168.216.6:8080 >>>> BugScan Memos
+192.168.216.6:6379 >>>> 存在redis未授权访问
+http://192.168.216.6:81/default.action >>>> 存在S2_045代码执行漏洞
+http://192.168.216.6:8080/memodeleteconfirm.action?id=3 >>>> 存在S2_045代码执行漏洞
+http://192.168.216.6:81/default.action >>>> 存在S2_016代码执行漏洞
+http://192.168.216.6:8080/memodeleteconfirm.action?id=3 >>>> 存在S2_032代码执行漏洞
+Complete scan target:192.168.216.6

@@ -23,6 +23,8 @@ import argparse
 from lib.config import (
     PASSWORD_DIC, MY_PROXY, USER_AGENT_LIST, OUTPUT_FILE
 )
+reload(sys)
+sys.setdefaultencoding('utf-8')
 requests.packages.urllib3.disable_warnings()
 ip_queue = Queue.Queue()
 Lock = threading.Lock()
@@ -132,6 +134,8 @@ def get_ip_list(ip):
 #标准化输出
 def output(info, color='white', on_color=None, attrs=None):
         print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color, on_color, attrs)
+        with open(OUTPUT_FILE,'a') as output:
+            output.write(info+'\n')
 def KeyboardInterrupt(signum,frame):
     output('[ERROR] user quit','red')
     print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
