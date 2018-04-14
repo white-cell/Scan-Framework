@@ -1,3 +1,4 @@
-2018-04-13 22:43:03,912 Scan.py[line:189] ERROR <expected an indented block (st2_eval.py, line 42)>
-2018-04-13 22:43:09,758 Scan.py[line:76] ERROR <'NoneType' object has no attribute 'string'>
-2018-04-13 22:43:10,012 crack_redis.py[line:35] ERROR <45.78.54.37 [Errno 61] Connection refused>
+2018-04-14 17:56:41,800 st2-045.py[line:72] ERROR <HTTP Error 404: >
+2018-04-14 17:56:41,839 st2-045.py[line:72] ERROR <HTTP Error 404: Not Found>
+2018-04-14 17:56:41,865 st2_eval.py[line:66] ERROR <S2_020 HTTP Error 404: >
+2018-04-14 17:56:41,875 st2_eval.py[line:66] ERROR <S2_032 HTTP Error 500: >

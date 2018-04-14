@@ -15,11 +15,13 @@ import sys
 import json
 import re
 import os
+import random
 import logging
 import signal
+import argparse
 
 from lib.config import (
-    PASSWORD_DIC, THREAD_COUNT, TIME_OUT, MY_PROXY, USER_AGENT_LIST, OUTPUT_FILE
+    PASSWORD_DIC, MY_PROXY, USER_AGENT_LIST, OUTPUT_FILE
 )
 requests.packages.urllib3.disable_warnings()
 ip_queue = Queue.Queue()
@@ -29,19 +31,21 @@ imported_plugins = []#已引入插件列表
 
 #插件主程序
 class Scan(threading.Thread):
-    def __init__(self):
+    def __init__(self,ports):
         threading.Thread.__init__(self)
         self.ip_queue = ip_queue
         self.Domain = []#开放web
+        self.ports = ports
     def run(self):
         while not self.ip_queue.empty():
             ip = self.ip_queue.get()
             output('Starting scan target:%s'%ip, 'green')
-            if FindDomain_flag != 'n':
+            if FindDomain_flag:
                 self.Domain = self.FindDomain(ip)
             for plugin in imported_plugins:
                 setattr(plugin, "FindDomain_flag", FindDomain_flag)
                 setattr(plugin, "Domain", self.Domain)
+                setattr(plugin, "TIME_OUT", TIME_OUT)
                 RETURN = plugin.exploit(ip)
                 if RETURN and type(RETURN)==list:
                     for i in RETURN:
@@ -51,15 +55,19 @@ class Scan(threading.Thread):
             output('Complete scan target:%s'%ip, 'green')
     def FindDomain(self,ip):
         Domain = []
-        for port in xrange(70,16000):
-            url1 = "http://%s:%d"%(ip,port)
-            url2 = "https://%s:%d"%(ip,port)
+        if type(self.ports) == list:
+            p = xrange(int(self.ports[0]),int(self.ports[1]))
+        if type(self.ports) == str:
+            p = self.ports.split(',')
+        for port in p:
+            url1 = "http://%s:%s"%(ip,port)
+            url2 = "https://%s:%s"%(ip,port)
             try:
-                resp = requests.get(url1,timeout=3)#越小效率越高，过小时准确度受影响
+                resp = requests.get(url1, timeout=TIME_OUT, headers={"User-Agent": random.choice(USER_AGENT_LIST)})#越小效率越高，过小时准确度受影响
                 flag = 1
             except:
                 try:
-                    resp = requests.get(url2,timeout=3, verify=False)
+                    resp = requests.get(url2,timeout=TIME_OUT, verify=False, headers={"User-Agent": random.choice(USER_AGENT_LIST)})
                     flag = 2
                 except:
                     continue
@@ -129,11 +137,30 @@ def KeyboardInterrupt(signum,frame):
     print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
     sys.exit(0)
 
-
+def parse_args():
+    parser = argparse.ArgumentParser(prog='Scan-Framework',
+                                    formatter_class=argparse.RawTextHelpFormatter,
+                                    description='*针对ip快速、易用的扫描框架*',
+                                    usage='Scan.py [options]')
+    parser.add_argument('-i', metavar='IP', type=str, default='',
+                        help='1.1 or 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini')
+    parser.add_argument('-P', metavar='PLUGIN SELECT', type=str, default='all',
+        help='select which plugin you want by -P scriptname,scriptname , default use all')
+    parser.add_argument('--noweb', action='store_false',
+                        help='select this to pass find domain and pass web plugins')
+    parser.add_argument('-p', metavar='WEBPORT', type=str, default='70-16000',
+        help='select ports you want to Brute force, default use 70-16000 or 80,443')
+    parser.add_argument('-t', metavar='THREADS', type=int, default=100,
+                        help='Num of scan threads, 100 by default')
+    parser.add_argument('-T', metavar='TIMEOUT', type=int, default=5,
+                        help='Num of scan timeout, 5 by default')
+    if len(sys.argv) == 1:
+        sys.argv.append('-h')
+    args = parser.parse_args()
+    return args
 def start():
     script_plugin = []
-    global FindDomain_flag
-    FindDomain_flag = 'y'#是否探测web端口标志位
+    global FindDomain_flag,TIME_OUT
     signal.signal(signal.SIGINT,KeyboardInterrupt)
     signal.signal(signal.SIGTERM,KeyboardInterrupt)
     print colored("""
@@ -156,27 +183,28 @@ def start():
                     script_plugin.append(filename.split('.')[0])
         except Exception, e:
             logging.error(e)
-    if len(sys.argv) == 2:
-        print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
-        for ip in get_ip_list(sys.argv[1]):
-            ip_queue.put(ip)
+    print colored("PLUGINS: "+str(script_plugin), color='grey', on_color='on_white')
+    args = parse_args()
+    if args.i:
 
-        plugins_flag = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), 'Use all plugins? [Y/n/q] '),'green'))
-        plugins_flag = plugins_flag[0:1]
-        plugins_flag = plugins_flag.lower()
-        if plugins_flag == 'q':
-            KeyboardInterrupt(0,0)
-        elif plugins_flag == 'n':
-            print colored("PLUGINS: "+str(script_plugin), color='grey', on_color='on_white')
-            select_plugins = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())),'Please input which plugin you want? [use , split] '),'green'))
+        TIME_OUT = args.T
+        THREAD_COUNT = args.t
+        print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
+        output('SET TIME_OUT=%d THREAD_COUNT=%d'%(args.T,args.t),'green')
+        for ip in get_ip_list(args.i):
+            ip_queue.put(ip)
+        if args.P != 'all':
+            select_plugins = args.P
             select_plugins = select_plugins.replace(' ','').replace('\'','')
             script_plugin = select_plugins.split(',')
-
-        FindDomain_flag = raw_input(colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())),'Use find domain? [Y/n/q] '),'green'))
-        FindDomain_flag = FindDomain_flag[0:1]
-        FindDomain_flag = FindDomain_flag.lower()
-        if FindDomain_flag == 'q':
-            KeyboardInterrupt(0,0)
+        if args.p:
+            if '-' in args.p:
+                ports = args.p.split('-')
+            elif ',' in args.p:
+                ports = args.p
+        else:
+            ports = [70,16000]
+        FindDomain_flag = args.noweb
         for plugin_name in script_plugin:
             try:
                 imported_plugin = __import__(plugin_name)
@@ -189,7 +217,7 @@ def start():
                 logging.error(e)
         threads = []
         for i in xrange(THREAD_COUNT):
-            scan_threads=Scan()
+            scan_threads=Scan(ports)
             scan_threads.setDaemon(True)#为了响应Ctrl+C
             threads.append(scan_threads)
             scan_threads.start()
