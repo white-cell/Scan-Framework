@@ -18,13 +18,12 @@ usage: Scan.py [options]
 *针对ip快速、易用的扫描框架*
 
 optional arguments:
-  -h, --help        show this help message and exit
-  -i IP             1.1 or 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini
-  -P PLUGIN SELECT  select which plugin you want by -P scriptname,scriptname , default use all
-  --noweb           select this to pass find domain and pass web plugins
-  -p WEBPORT        select ports you want to Brute force, default use 70-16000
-  -t THREADS        Num of scan threads, 100 by default
-  -T TIMEOUT        Num of scan timeout, 5 by default
+    -h, --help        show this help message and exit
+    -i IP             1.1 or 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini
+    -P PLUGIN SELECT  select which plugin you want by -P scriptname,scriptname , default use all
+    -p SCANPORT       select ports you want to scan, default use 70-16000 or 80,443
+    -t THREADS        Num of scan threads, 100 by default
+    -T TIMEOUT        Num of scan timeout, 3 by default
 ```
 # 文件结构
 * /lib/config.py 配置文件，配置一些全局变量，增加变量需引入
@@ -41,13 +40,12 @@ from lib.config import (
 )
 def exploit(ip):
     result = []
-    if FindDomain_flag:
-        if Domain:
-            for domain in Domain:
-                #poc
-                result.append('%s >>>> 存在xxx漏洞'%domain)
-            if len(result):
-                return result
+    if Domain:
+        for domain in Domain:
+            #poc
+            result.append('%s >>>> 存在xxx漏洞'%domain)
+        if len(result):
+            return result
 ```
 * 端口类漏洞插件格式
 ```python
@@ -58,7 +56,7 @@ from lib.config import (
     PASSWORD_DIC, TIME_OUT, MY_PROXY, USER_AGENT_LIST
 )
 def exploit(ip):
-    port = 端口
+    #获取port参数
     try:
         #poc
         if 存在漏洞:
@@ -69,11 +67,10 @@ def exploit(ip):
 ```
 
 # example
-* python Scan.py -i 192.168.216.6
+* python Scan.py -i 192.168.216
 * python Scan.py -i 192.168.216.6 -p 79-8081
 * python Scan.py -i 192.168.216.6 -p 80,443
 * python Scan.py -i 192.168.216.6 -P st2-045,st2_eval
-* python Scan.py -i 192.168.216.6 --noweb
 
 # docker测试环境
 ![](https://github.com/white-cell/Scan-Framework/blob/master/run1.jpg)  
