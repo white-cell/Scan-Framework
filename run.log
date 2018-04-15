@@ -1,4 +1,0 @@
-2018-04-14 18:20:20,940 st2-045.py[line:72] ERROR <HTTP Error 404: >
-2018-04-14 18:20:21,049 st2-045.py[line:72] ERROR <HTTP Error 404: Not Found>
-2018-04-14 18:20:21,181 st2_eval.py[line:66] ERROR <S2_020 HTTP Error 404: >
-2018-04-14 18:20:21,218 st2_eval.py[line:66] ERROR <S2_032 HTTP Error 500: >

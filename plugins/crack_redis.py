@@ -14,7 +14,6 @@ def get_plugin_info():
     }
 
 def exploit(ip):
-    port = 6379
     try:
         socket.setdefaulttimeout(TIME_OUT)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
