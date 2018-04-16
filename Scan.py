@@ -41,11 +41,12 @@ class Scan(threading.Thread):
         while not self.port_queue.empty():
             port = self.port_queue.get()
             try:
-                socket.setdefaulttimeout(TIME_OUT)
+                socket.setdefaulttimeout(TIME_OUT/3)
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((str(self.ip),int(port)))
                 sock.close()
                 self.ports.append(port)
+                output('OPEN %s:%s'%(self.ip,port))
                 url1 = "http://%s:%s"%(self.ip,port)
                 url2 = "https://%s:%s"%(self.ip,port)
                 try:
@@ -71,6 +72,8 @@ class Scan(threading.Thread):
                     except Exception, e:
                         logging.error(e)
                         title = 'Null'
+                    if title =="400 The plain HTTP request was sent to HTTPS port":
+                        flag=2
                     if flag == 1:
                         domain = url1
                     if flag == 2:
@@ -133,7 +136,7 @@ def get_ip_list(ip):
 def output(info, color='white', on_color=None, attrs=None):
         print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color, on_color, attrs)
         with open(OUTPUT_FILE,'a') as output:
-            output.write(info+'\n')
+            output.write("[%s] %s\n"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info))
 def KeyboardInterrupt(signum,frame):
     output('[ERROR] user quit','red')
     print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
