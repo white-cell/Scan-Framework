@@ -41,14 +41,14 @@ class Scan(threading.Thread):
         while not self.port_queue.empty():
             port = self.port_queue.get()
             try:
-                socket.setdefaulttimeout(TIME_OUT/3)
+                socket.setdefaulttimeout(float(TIME_OUT)/4)
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.connect((str(self.ip),int(port)))
                 sock.close()
                 self.ports.append(port)
                 output('OPEN %s:%s'%(self.ip,port))
-                url1 = "http://%s:%s"%(self.ip,port)
-                url2 = "https://%s:%s"%(self.ip,port)
+                url1 = "https://%s:%s"%(self.ip,port)
+                url2 = "http://%s:%s"%(self.ip,port)
                 try:
                     resp = requests.get(url1, timeout=TIME_OUT, headers={"User-Agent": random.choice(USER_AGENT_LIST)})#越小效率越高，过小时准确度受影响
                     flag = 1
@@ -72,8 +72,6 @@ class Scan(threading.Thread):
                     except Exception, e:
                         logging.error(e)
                         title = 'Null'
-                    if title =="400 The plain HTTP request was sent to HTTPS port":
-                        flag=2
                     if flag == 1:
                         domain = url1
                     if flag == 2:
