@@ -8,10 +8,10 @@ from lib.config import (
 )
 def get_plugin_info():
     return {
-        "name": "st2_eval",
-        "info": "多个struts2远程代码执行",
+        "name": "weblogic CVE-2018-2628",
+        "info": "weblogic CVE-2018-2628",
         "Author":"Jaqen",
-        "Create_date":"2017-10-01"
+        "Create_date":"2018-04-18"
     }
 def exploit(ip):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
