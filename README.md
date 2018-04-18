@@ -12,7 +12,7 @@ python Scan.py
  ___) | (_| (_| | | | | |  _|| | | (_| | | | | | |  __/\ V  V / (_) | |  |   <
 |____/ \___\__,_|_| |_| |_|  |_|  \__,_|_| |_| |_|\___| \_/\_/ \___/|_|  |_|\_\  __author__="Jaqen"
 
-PLUGINS: ['crack_redis', 'tomcatgetshell', 'st2-045', 'st2_eval']
+PLUGINS: ['crack_redis', 'tomcatgetshell', 'weblogic2018', 'st2-045', 'st2_eval']
 usage: Scan.py [options]
 
 *针对ip快速、易用的扫描框架*
