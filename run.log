@@ -1,0 +1,4 @@
+2018-04-19 10:14:14,766 Scan.py[line:99] ERROR <[SSL: UNKNOWN_PROTOCOL] unknown protocol (_ssl.c:590)>
+2018-04-19 10:14:16,899 st2-045.py[line:71] ERROR <HTTP Error 404: Not Found>
+2018-04-19 10:14:20,740 tomcatgetshell.py[line:38] ERROR <[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:590)>
+2018-04-19 10:14:22,885 st2-045.py[line:71] ERROR <<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed (_ssl.c:590)>>

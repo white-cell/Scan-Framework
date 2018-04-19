@@ -47,40 +47,28 @@ class Scan(threading.Thread):
                 sock.close()
                 self.ports.append(port)
                 output('OPEN %s:%s'%(self.ip,port))
-                url1 = "https://%s:%s"%(self.ip,port)
-                url2 = "http://%s:%s"%(self.ip,port)
-                try:
-                    resp = requests.get(url1, timeout=TIME_OUT, headers={"User-Agent": random.choice(USER_AGENT_LIST)})#越小效率越高，过小时准确度受影响
-                    flag = 1
-                except Exception, e:
-                    #logging.error(e)
-                    try:
-                        resp = requests.get(url2,timeout=TIME_OUT, verify=False, headers={"User-Agent": random.choice(USER_AGENT_LIST)})
-                        flag = 2
-                    except Exception, e:
-                        #logging.error(e)
-                        flag = 3
-                if flag !=3 and resp.status_code:
-                    try:
-                        resp.encoding = requests.utils.get_encodings_from_content(resp.content)
-                    except Exception, e:
-                        logging.error(e)
-                        resp.encoding = 'utf-8'
-                    try:
-                        soup = BeautifulSoup(resp.content,"html.parser")
-                        title = soup.title.string
-                    except Exception, e:
-                        logging.error(e)
-                        title = 'Null'
-                    if flag == 1:
-                        domain = url1
-                    if flag == 2:
-                        domain = url2
+            except socket.error,e:
+                #logging.error(e)
+                continue
+            try:
+                url1 = "http://%s:%s"%(self.ip,port)
+                url2 = "https://%s:%s"%(self.ip,port)
+                httpTitle = self.getTitle(url1)
+                httpsTitle = self.getTitle(url2)
+
+                if httpTitle and httpTitle != "400 The plain HTTP request was sent to HTTPS port":
+                    domain = url1
+                    title = httpTitle
+                    output("WEB %s >>>> %s"%(domain,title),'green')
+                    self.domain.append(domain)
+                if httpsTitle:
+                    domain = url2
+                    title = httpsTitle
                     output("WEB %s >>>> %s"%(domain,title),'green')
                     self.domain.append(domain)
             except socket.error,e:
                 #logging.error(e)
-                continue
+                pass
             for plugin in imported_plugins:
                 setattr(plugin, "Domain", self.domain)
                 setattr(plugin, "TIME_OUT", TIME_OUT)
@@ -91,44 +79,66 @@ class Scan(threading.Thread):
                         output(i)
                 elif RETURN and type(RETURN)==str:
                     output(RETURN)
+    def getTitle(self,url):
+        try:
+            resp = requests.get(url, timeout=TIME_OUT, headers={"User-Agent": random.choice(USER_AGENT_LIST)}, allow_redirects=True, verify=False)
+            if resp.status_code:
+                try:
+                    resp.encoding = requests.utils.get_encodings_from_content(resp.content)
+                except Exception, e:
+                    logging.error(e)
+                    resp.encoding = 'utf-8'
+                try:
+                    soup = BeautifulSoup(resp.content,"html.parser")
+                    title = soup.title.string
+                except Exception, e:
+                    logging.error(e)
+                    title = 'Null'
+            return title
+        except Exception, e:
+            logging.error(e)
 
 #转换ip格式
 def get_ip_list(ip):
     ip_list = []
-    iptonum = lambda x:sum([256**j*int(i) for j,i in enumerate(x.split('.')[::-1])])
-    numtoip = lambda x: '.'.join([str(x/(256**i)%256) for i in range(3,-1,-1)])
-    if '-' in ip:
-        ip_range = ip.split('-')
-        ip_start = long(iptonum(ip_range[0]))
-        ip_end = long(iptonum(ip_range[1]))
-        ip_count = ip_end - ip_start
-        if ip_count >= 0 and ip_count <= 65536:
-            for ip_num in range(ip_start,ip_end+1):
-                ip_list.append(numtoip(ip_num))
+    try:
+        iptonum = lambda x:sum([256**j*int(i) for j,i in enumerate(x.split('.')[::-1])])
+        numtoip = lambda x: '.'.join([str(x/(256**i)%256) for i in range(3,-1,-1)])
+        if '-' in ip:
+            ip_range = ip.split('-')
+            ip_start = long(iptonum(ip_range[0]))
+            ip_end = long(iptonum(ip_range[1]))
+            ip_count = ip_end - ip_start
+            if ip_count >= 0 and ip_count <= 65536:
+                for ip_num in range(ip_start,ip_end+1):
+                    ip_list.append(numtoip(ip_num))
+            else:
+                output('[!] wrong input format', 'red')
+                sys.exit()
+        elif '.ini' in ip:
+            with open(ip,'r') as ip_config:
+                for ip in ip_config:
+                    ip_list.extend(get_ip_list(ip.rstrip('\n').strip()))
         else:
-            output('[!] wrong input format', 'red')
-            sys.exit()
-    elif '.ini' in ip:
-        with open(ip,'r') as ip_config:
-            for ip in ip_config:
-                ip_list.extend(get_ip_list(ip.rstrip('\n').strip()))
-    else:
-        ip_split=ip.split('.')
-        net = len(ip_split)
-        if net == 2:
-            for b in range(1,255):
+            ip_split=ip.split('.')
+            net = len(ip_split)
+            if net == 2:
+                for b in range(1,255):
+                    for c in range(1,255):
+                        ip = "%s.%s.%d.%d"%(ip_split[0],ip_split[1],b,c)
+                        ip_list.append(ip)
+            elif net == 3:
                 for c in range(1,255):
-                    ip = "%s.%s.%d.%d"%(ip_split[0],ip_split[1],b,c)
+                    ip = "%s.%s.%s.%d"%(ip_split[0],ip_split[1],ip_split[2],c)
                     ip_list.append(ip)
-        elif net == 3:
-            for c in range(1,255):
-                ip = "%s.%s.%s.%d"%(ip_split[0],ip_split[1],ip_split[2],c)
+            elif net ==4:
                 ip_list.append(ip)
-        elif net ==4:
-            ip_list.append(ip)
-        else:
-            output('[!] wrong input format', 'red')
-            sys.exit(0)
+            else:
+                output('[!] wrong input format', 'red')
+                sys.exit(0)
+    except :
+        output('[!] wrong input format', 'red')
+        sys.exit(0)
     return ip_list
 #标准化输出
 def output(info, color='white', on_color=None, attrs=None):
