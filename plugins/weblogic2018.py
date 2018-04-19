@@ -15,7 +15,7 @@ def get_plugin_info():
     }
 def exploit(ip):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(50)
+    sock.settimeout(20)
     VER_SIG=['\\$Proxy[0-9]+']
     server_addr = (ip, int(port))
     try:
@@ -43,9 +43,9 @@ def exploit(ip):
         sock.send(payload.decode('hex'))
         res = ''
         try:
-            while True:
+            for i in xrange(20):
                 res += sock.recv(4096)
-                time.sleep(0.1)
+                time.sleep(1)
         except Exception as e:
             pass
     except Exception,e:
