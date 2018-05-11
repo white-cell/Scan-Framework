@@ -1,7 +1,0 @@
-2018-05-11 23:56:46,490 Scan.py[line:111] ERROR <('Connection aborted.', BadStatusLine('SSH-2.0-OpenSSH_5.3\r\n',))>
-2018-05-11 23:56:46,685 Scan.py[line:111] ERROR <[SSL: UNKNOWN_PROTOCOL] unknown protocol (_ssl.c:590)>
-2018-05-11 23:56:47,961 weblogic2018.py[line:36] ERROR <47.52.171.108 [Errno 32] Broken pipe>
-2018-05-11 23:56:47,961 weblogic2018.py[line:37] ERROR <47.52.171.108%s:%d >>>>buildT3RequestObject ERROR>
-2018-05-11 23:56:47,962 weblogic2018.py[line:52] ERROR <47.52.171.108 [Errno 32] Broken pipe>
-2018-05-11 23:56:47,964 weblogic2018.py[line:53] ERROR <47.52.171.10847.52.171.108:22 >>>>GetRemotePayload ERROR>
-2018-05-11 23:56:47,968 weblogic2018.py[line:62] ERROR <47.52.171.108 local variable 'res' referenced before assignment>
