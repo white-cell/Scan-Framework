@@ -21,7 +21,7 @@ optional arguments:
     -h, --help        show this help message and exit
     -i IP             1.1 or 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini
     -P PLUGIN SELECT  select which plugin you want by -P scriptname,scriptname , default use all
-    -p SCANPORT       select ports you want to scan, default use 70-16000 or 80,443
+    -p SCANPORT       select ports you want to scan, default use 21-16000
     -t THREADS        Num of scan threads, 100 by default
     -T TIMEOUT        Num of scan timeout, 3 by default
 ```

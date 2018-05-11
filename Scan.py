@@ -179,7 +179,7 @@ def parse_args():
     parser.add_argument('-P', metavar='PLUGIN SELECT', type=str, default='all',
         help='select which plugin you want by -P scriptname,scriptname , default use all')
     parser.add_argument('-p', metavar='SCANPORT', type=str, default='21-16000',
-        help='select ports you want to scan, default use 70-16000 or 80,443')
+        help='select ports you want to scan, default use 21-16000')
     parser.add_argument('-t', metavar='THREADS', type=int, default=100,
                         help='Num of scan threads, 100 by default')
     parser.add_argument('-T', metavar='TIMEOUT', type=int, default=3,
