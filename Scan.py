@@ -30,7 +30,7 @@ plugin_info_list = []#插件信息列表
 imported_plugins = []#已引入插件列表
 ResultOutput = {}
 
-#插件主程序
+#主程序
 class Scan(threading.Thread):
     def __init__(self,ip,port_queue):
         threading.Thread.__init__(self)
@@ -42,22 +42,28 @@ class Scan(threading.Thread):
     def run(self):
         while not self.port_queue.empty():
             port = self.port_queue.get()
+            banner = ''
             try:
                 socket.setdefaulttimeout(float(TIME_OUT)/4)
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#只探测TCP端口
                 sock.connect((str(self.ip),int(port)))
-                banner = sock.recv(512)
-                sock.close()
-                self.ports.append(port)
-                if banner:
-                    output('OPEN %s:%s >>>> %s'%(self.ip,port,banner.rstrip('\n')),attrs=['bold'])
-                    self.Reslut.append('%s >>>> %s'%(port,banner.rstrip('\n')))
-                else:
-                    output('OPEN %s:%s'%(self.ip,port),attrs=['bold'])
-                    self.Reslut.append('OPEN %s'%(port))
             except socket.error,e:
                 #logging.error(e)
                 continue
+            try:
+                banner = sock.recv(512)
+                sock.close()
+            except Exception,e:
+                sock.close()
+                logging.error(e)
+                pass
+            self.ports.append(port)
+            if banner:
+                output('OPEN %s:%s >>>> %s'%(self.ip,port,banner.rstrip('\n')),attrs=['bold'])
+                self.Reslut.append('%s >>>> %s'%(port,banner.rstrip('\n')))
+            else:
+                output('OPEN %s:%s'%(self.ip,port),attrs=['bold'])
+                self.Reslut.append('OPEN %s'%(port))
             try:
                 url1 = "http://%s:%s"%(self.ip,port)
                 url2 = "https://%s:%s"%(self.ip,port)
@@ -68,13 +74,13 @@ class Scan(threading.Thread):
                     domain = url1
                     title = httpTitle
                     output("WEB %s >>>> %s"%(domain,title),'green')
-                    self.Reslut.append('OPEN %s >>>> %s'%(port,title))
+                    self.Reslut.append('OPEN %s >>>> %s|%s'%(port,domain,title))
                     self.domain.append(domain)
                 if httpsTitle:
                     domain = url2
                     title = httpsTitle
                     output("WEB %s >>>> %s"%(domain,title),'green')
-                    self.Reslut.append('OPEN %s >>>> %s'%(port,title))
+                    self.Reslut.append('OPEN %s >>>> %s|%s'%(port,domain,title))
                     self.domain.append(domain)
             except socket.error,e:
                 #logging.error(e)
@@ -82,15 +88,16 @@ class Scan(threading.Thread):
             for plugin in imported_plugins:
                 setattr(plugin, "Domain", self.domain)
                 setattr(plugin, "TIME_OUT", TIME_OUT)
-                setattr(plugin,"port",port)
+                setattr(plugin,"PORT",port)
                 RETURN = plugin.exploit(self.ip)
                 if RETURN and type(RETURN)==list:
                     for i in RETURN:
                         self.Reslut.append(i)
-                        output(i,attrs=['bold'])
+                        output(i,'red',attrs=['bold'])
                 elif RETURN and type(RETURN)==str:
-                    self.Reslut.append(i)
-                    output(RETURN,attrs=['bold'])
+                    self.Reslut.append(RETURN)
+                    output(RETURN,'red',attrs=['bold'])
+
     def getTitle(self,url):
         try:
             resp = requests.get(url, timeout=TIME_OUT, headers={"User-Agent": random.choice(USER_AGENT_LIST)}, allow_redirects=True, verify=False)
@@ -108,7 +115,7 @@ class Scan(threading.Thread):
                     title = '标题为空'
             return title
         except Exception, e:
-            logging.error(e)
+            logging.error(url+str(e))
 
 #转换ip格式
 def get_ip_list(ip):
@@ -154,7 +161,9 @@ def get_ip_list(ip):
     return ip_list
 #标准化输出
 def output(info, color='white', on_color=None, attrs=None):
-        print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color, on_color, attrs)
+    Lock.acquire()
+    print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color, on_color, attrs)
+    Lock.release()
 def KeyboardInterrupt(signum,frame):
     output('[ERROR] user quit','red')
     print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
@@ -169,7 +178,7 @@ def parse_args():
                         help='1.1 or 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini')
     parser.add_argument('-P', metavar='PLUGIN SELECT', type=str, default='all',
         help='select which plugin you want by -P scriptname,scriptname , default use all')
-    parser.add_argument('-p', metavar='SCANPORT', type=str, default='70-16000',
+    parser.add_argument('-p', metavar='SCANPORT', type=str, default='21-16000',
         help='select ports you want to scan, default use 70-16000 or 80,443')
     parser.add_argument('-t', metavar='THREADS', type=int, default=100,
                         help='Num of scan threads, 100 by default')
@@ -217,13 +226,10 @@ def start():
             select_plugins = args.P
             select_plugins = select_plugins.replace(' ','').replace('\'','')
             script_plugin = select_plugins.split(',')
-        if args.p:
-            if '-' in args.p:
-                ports = args.p.split('-')
-            elif ',' in args.p or args.p.isdigit():
-                ports = args.p
-        else:
-            ports = [70,16000]
+        if '-' in args.p:
+            ports = args.p.split('-')
+        elif ',' in args.p or args.p.isdigit():
+            ports = args.p
         for plugin_name in script_plugin:
             try:
                 imported_plugin = __import__(plugin_name)
@@ -251,14 +257,12 @@ def start():
             for i in xrange(THREAD_COUNT):
                 scan_threads=Scan(ip,port_queue)
                 scan_threads.setDaemon(True)#为了响应Ctrl+C
-                threads.append(scan_threads)
                 scan_threads.start()
-            while 1:
-                alive = False
-                for i in range(THREAD_COUNT):
-                    alive = alive or threads[i].isAlive()#为了响应Ctrl+C不能用join
-                if not alive:
-                    break
+                threads.append(scan_threads)
+            for thread in threads:
+                while 1:
+                    if not thread.isAlive():
+                        break
             output('Complete scan target:%s'%ip, 'green')
             with open(OUTPUT_FILE,'a') as FileOutput:
                 FileOutput.write(ip+'\n')

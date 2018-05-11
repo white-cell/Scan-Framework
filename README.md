@@ -26,9 +26,9 @@ optional arguments:
     -T TIMEOUT        Num of scan timeout, 3 by default
 ```
 # 文件结构
-* /lib/config.py 配置文件，配置一些全局变量，增加变量需引入
+* /lib/config.py 配置文件，配置一些全局变量(详情查看文件)，增加变量需引入
 * /plugins/  插件目录，将写好的插件放在此目录下就可以使用
-* /result.txt 每次运行的结果都会存在里面
+* /result.txt 每次运行的结果重新排版记录在里面
 
 # 插件格式
 * WEB类漏洞插件格式
@@ -48,7 +48,7 @@ def exploit(ip):
             return result
 ```
 * 端口类漏洞插件格式
-```python
+``` python
 # coding:utf-8
 import socket
 import logging
@@ -56,7 +56,7 @@ from lib.config import (
     PASSWORD_DIC, TIME_OUT, MY_PROXY, USER_AGENT_LIST
 )
 def exploit(ip):
-    #获取port参数
+    port = PORT
     try:
         #poc
         if 存在漏洞:
@@ -67,9 +67,12 @@ def exploit(ip):
 ```
 
 # example
+* python Scan.py -i 192.168.216.6
 * python Scan.py -i 192.168.216
+* python Scan.py -i ip.ini
 * python Scan.py -i 192.168.216.6 -p 79-8081
 * python Scan.py -i 192.168.216.6 -p 80,443
+* python Scan.py -i 192.168.216.6 -p 80
 * python Scan.py -i 192.168.216.6 -P st2-045,st2_eval
 
 # docker测试环境
