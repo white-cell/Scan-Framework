@@ -28,6 +28,7 @@ requests.packages.urllib3.disable_warnings()
 Lock = threading.Lock()
 plugin_info_list = []#插件信息列表
 imported_plugins = []#已引入插件列表
+ResultOutput = {}
 
 #插件主程序
 class Scan(threading.Thread):
@@ -37,16 +38,23 @@ class Scan(threading.Thread):
         self.ip = ip
         self.domain = []#开放web
         self.ports = []#开放的tcp端口
+        self.Reslut = ResultOutput[ip]
     def run(self):
         while not self.port_queue.empty():
             port = self.port_queue.get()
             try:
                 socket.setdefaulttimeout(float(TIME_OUT)/4)
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#只探测TCP端口
                 sock.connect((str(self.ip),int(port)))
+                banner = sock.recv(512)
                 sock.close()
                 self.ports.append(port)
-                output('OPEN %s:%s'%(self.ip,port))
+                if banner:
+                    output('OPEN %s:%s >>>> %s'%(self.ip,port,banner.rstrip('\n')),attrs=['bold'])
+                    self.Reslut.append('%s >>>> %s'%(port,banner.rstrip('\n')))
+                else:
+                    output('OPEN %s:%s'%(self.ip,port),attrs=['bold'])
+                    self.Reslut.append('OPEN %s'%(port))
             except socket.error,e:
                 #logging.error(e)
                 continue
@@ -60,11 +68,13 @@ class Scan(threading.Thread):
                     domain = url1
                     title = httpTitle
                     output("WEB %s >>>> %s"%(domain,title),'green')
+                    self.Reslut.append('OPEN %s >>>> %s'%(port,title))
                     self.domain.append(domain)
                 if httpsTitle:
                     domain = url2
                     title = httpsTitle
                     output("WEB %s >>>> %s"%(domain,title),'green')
+                    self.Reslut.append('OPEN %s >>>> %s'%(port,title))
                     self.domain.append(domain)
             except socket.error,e:
                 #logging.error(e)
@@ -76,9 +86,11 @@ class Scan(threading.Thread):
                 RETURN = plugin.exploit(self.ip)
                 if RETURN and type(RETURN)==list:
                     for i in RETURN:
-                        output(i)
+                        self.Reslut.append(i)
+                        output(i,attrs=['bold'])
                 elif RETURN and type(RETURN)==str:
-                    output(RETURN)
+                    self.Reslut.append(i)
+                    output(RETURN,attrs=['bold'])
     def getTitle(self,url):
         try:
             resp = requests.get(url, timeout=TIME_OUT, headers={"User-Agent": random.choice(USER_AGENT_LIST)}, allow_redirects=True, verify=False)
@@ -93,7 +105,7 @@ class Scan(threading.Thread):
                     title = soup.title.string
                 except Exception, e:
                     logging.error(e)
-                    title = 'Null'
+                    title = '标题为空'
             return title
         except Exception, e:
             logging.error(e)
@@ -143,8 +155,6 @@ def get_ip_list(ip):
 #标准化输出
 def output(info, color='white', on_color=None, attrs=None):
         print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color, on_color, attrs)
-        with open(OUTPUT_FILE,'a') as output:
-            output.write("[%s] %s\n"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info))
 def KeyboardInterrupt(signum,frame):
     output('[ERROR] user quit','red')
     print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
@@ -200,6 +210,8 @@ def start():
         TIME_OUT = args.T
         THREAD_COUNT = args.t
         print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
+        with open(OUTPUT_FILE,'a') as FileOutput:
+                FileOutput.write('[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time())))
         output('SET TIME_OUT=%d THREAD_COUNT=%d'%(args.T,args.t),'green')
         if args.P != 'all':
             select_plugins = args.P
@@ -208,7 +220,7 @@ def start():
         if args.p:
             if '-' in args.p:
                 ports = args.p.split('-')
-            elif ',' in args.p:
+            elif ',' in args.p or args.p.isdigit():
                 ports = args.p
         else:
             ports = [70,16000]
@@ -224,11 +236,15 @@ def start():
                 logging.error(e)
         for ip in get_ip_list(args.i):
             output('Starting scan target:%s'%ip, 'green')
+            ResultOutput[ip] = []
             port_queue = Queue.Queue()
             if type(ports) == list:
                 p = xrange(int(ports[0]),int(ports[1]))
             if type(ports) == str:
-                p = ports.split(',')
+                if ',' in ports:
+                    p = ports.split(',')
+                elif ports.isdigit():
+                    p =[ports]
             for port in p:
                 port_queue.put(port)
             threads = []
@@ -238,13 +254,20 @@ def start():
                 threads.append(scan_threads)
                 scan_threads.start()
             while 1:
-             alive = False
-             for i in range(THREAD_COUNT):
-                 alive = alive or threads[i].isAlive()#为了响应Ctrl+C不能用join
-             if not alive:
-                 break
+                alive = False
+                for i in range(THREAD_COUNT):
+                    alive = alive or threads[i].isAlive()#为了响应Ctrl+C不能用join
+                if not alive:
+                    break
             output('Complete scan target:%s'%ip, 'green')
+            with open(OUTPUT_FILE,'a') as FileOutput:
+                FileOutput.write(ip+'\n')
+                for i in ResultOutput[ip]:
+                    FileOutput.write('|--%s\n'%i)
+                FileOutput.write('\n')
         print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
+        with open(OUTPUT_FILE,'a') as FileOutput:
+                FileOutput.write('[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time())))
 
 
 if __name__ == '__main__':
