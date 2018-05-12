@@ -101,21 +101,25 @@ class Scan(threading.Thread):
     def getTitle(self,url):
         try:
             resp = requests.get(url, timeout=TIME_OUT, headers={"User-Agent": random.choice(USER_AGENT_LIST)}, allow_redirects=True, verify=False)
-            if resp.status_code:
-                try:
-                    resp.encoding = requests.utils.get_encodings_from_content(resp.content)
-                except Exception, e:
-                    logging.error(e)
-                    resp.encoding = 'utf-8'
-                try:
-                    soup = BeautifulSoup(resp.content,"html.parser")
-                    title = soup.title.string
-                except Exception, e:
-                    logging.error(e)
-                    title = '标题为空'
-            return title
         except Exception, e:
             logging.error(url+str(e))
+            return False
+        if resp.status_code:
+            title = '标题为空'
+            try:
+                resp.encoding = requests.utils.get_encodings_from_content(resp.content)
+            except Exception, e:
+                logging.error(e)
+                resp.encoding = 'utf-8'
+            try:
+                soup = BeautifulSoup(resp.content,"html.parser")
+                if soup.title.string:
+                    title = soup.title.string
+            except Exception, e:
+                logging.error(e)
+                title = '标题为空'
+        return title
+        
 
 #转换ip格式
 def get_ip_list(ip):
