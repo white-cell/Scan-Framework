@@ -5,7 +5,7 @@ from lib.config import (
     PASSWORD_DIC, MY_PROXY, USER_AGENT_LIST
 )
 
-def get_plugin_info():
+def plugin_info():
     return {
         "name": "crack_redis",
         "info": "redis未授权或弱口令",

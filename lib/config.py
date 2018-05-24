@@ -6,7 +6,8 @@
 PASSWORD_DIC = ['abc123','123456']
 
 #代理地址
-MY_PROXY = '127.0.0.1:8080'
+MY_PROXY = { "http":"127.0.0.1:8888","https":"127.0.0.1:8888"}
+# MY_PROXY = {}
 
 # User-Agent list
 USER_AGENT_LIST = [

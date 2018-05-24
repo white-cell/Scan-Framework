@@ -6,7 +6,7 @@ import logging
 from lib.config import (
     PASSWORD_DIC,  MY_PROXY, USER_AGENT_LIST
 )
-def get_plugin_info():
+def plugin_info():
     return {
         "name": "weblogic CVE-2018-2628",
         "info": "weblogic CVE-2018-2628",

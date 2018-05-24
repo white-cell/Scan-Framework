@@ -6,8 +6,7 @@
 #
 
 import lib.requests as requests
-from lib.termcolor import colored
-from bs4 import BeautifulSoup
+import lib.masscan as masscan
 import threading
 import socket
 import Queue
@@ -18,7 +17,8 @@ import random
 import logging
 import signal
 import argparse
-
+from lib.termcolor import colored
+from bs4 import BeautifulSoup
 from lib.config import (
     PASSWORD_DIC, MY_PROXY, USER_AGENT_LIST, OUTPUT_FILE
 )
@@ -26,7 +26,6 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 requests.packages.urllib3.disable_warnings()
 Lock = threading.Lock()
-plugin_info_list = []#插件信息列表
 imported_plugins = []#已引入插件列表
 ResultOutput = {}
 
@@ -42,28 +41,16 @@ class Scan(threading.Thread):
     def run(self):
         while not self.port_queue.empty():
             port = self.port_queue.get()
-            banner = ''
-            try:
-                socket.setdefaulttimeout(float(TIME_OUT)/4)
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)#只探测TCP端口
-                sock.connect((str(self.ip),int(port)))
-            except socket.error,e:
-                #logging.error(e)
-                continue
-            try:
-                banner = sock.recv(512)
-                sock.close()
-            except Exception,e:
-                sock.close()
-                logging.error(e)
-                pass
+            port_type = port[0]
+            banner = port[1]
+            port = int(port[2])
             self.ports.append(port)
             if banner:
                 output('OPEN %s:%s >>>> %s'%(self.ip,port,banner.rstrip('\n')),attrs=['bold'])
                 self.Reslut.append('%s >>>> %s'%(port,banner.rstrip('\n')))
             else:
-                output('OPEN %s:%s'%(self.ip,port),attrs=['bold'])
-                self.Reslut.append('OPEN %s'%(port))
+                output('OPEN %s:%s >>>> %s'%(self.ip,port,port_type),attrs=['bold'])
+                self.Reslut.append('%s >>>> %s'%(port,port_type.rstrip('\n')))
             try:
                 url1 = "http://%s:%s"%(self.ip,port)
                 url2 = "https://%s:%s"%(self.ip,port)
@@ -74,13 +61,13 @@ class Scan(threading.Thread):
                     domain = url1
                     title = httpTitle
                     output("WEB %s >>>> %s"%(domain,title),'green')
-                    self.Reslut.append('OPEN %s >>>> %s|%s'%(port,domain,title))
+                    self.Reslut.append('OPEN %s >>>> %s|%s'%(port,domain,title.encode('utf-8')))
                     self.domain.append(domain)
                 if httpsTitle:
                     domain = url2
                     title = httpsTitle
                     output("WEB %s >>>> %s"%(domain,title),'green')
-                    self.Reslut.append('OPEN %s >>>> %s|%s'%(port,domain,title))
+                    self.Reslut.append('OPEN %s >>>> %s|%s'%(port,domain,title.encode('utf-8')))
                     self.domain.append(domain)
             except socket.error,e:
                 #logging.error(e)
@@ -180,14 +167,14 @@ def parse_args():
                                     usage='Scan.py [options]')
     parser.add_argument('-i', metavar='IP', type=str, default='',
                         help='1.1 or 1.1.1 or 1.1.1.1-1.1.1.5 or ip.ini')
-    parser.add_argument('-P', metavar='PLUGIN SELECT', type=str, default='all',
-        help='select which plugin you want by -P scriptname,scriptname , default use all')
-    parser.add_argument('-p', metavar='SCANPORT', type=str, default='21-16000',
-        help='select ports you want to scan, default use 21-16000')
+    parser.add_argument('-P', metavar='PLUGIN SELECT', type=str, default='None',
+        help='select which plugin you want by -P scriptname,scriptname , default use None')
+    parser.add_argument('-p', metavar='SCANPORT', type=str, default='0-65535',
+        help='select ports you want to scan, default use 0-65535,')
     parser.add_argument('-t', metavar='THREADS', type=int, default=100,
                         help='Num of scan threads, 100 by default')
-    parser.add_argument('-T', metavar='TIMEOUT', type=int, default=3,
-                        help='Num of scan timeout, 3 by default')
+    parser.add_argument('-T', metavar='TIMEOUT', type=int, default=5,
+                        help='Num of scan timeout, 5 by default')
     if len(sys.argv) == 1:
         sys.argv.append('-h')
     args = parser.parse_args()
@@ -200,7 +187,7 @@ def start():
     logging.basicConfig(level=logging.WARNING,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s <%(message)s>',
                     filename='run.log',
-                    filemode='w')
+                    filemode='w') 
     print colored("""
  ____                    _____                                            _
 / ___|  ___ __ _ _ __   |  ___| __ __ _ _ __ ___   _____      _____  _ __| | __
@@ -225,38 +212,66 @@ def start():
         print '\n[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
         with open(OUTPUT_FILE,'a') as FileOutput:
                 FileOutput.write('[*] starting at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time())))
-        output('SET TIME_OUT=%d THREAD_COUNT=%d'%(args.T,args.t),'green')
         if args.P != 'all':
             select_plugins = args.P
-            select_plugins = select_plugins.replace(' ','').replace('\'','')
-            script_plugin = select_plugins.split(',')
-        if '-' in args.p:
-            ports = args.p.split('-')
-        elif ',' in args.p or args.p.isdigit():
-            ports = args.p
-        for plugin_name in script_plugin:
-            try:
-                imported_plugin = __import__(plugin_name)
-                imported_plugins.append(imported_plugin)
-                plugin_info = imported_plugin.get_plugin_info()
-                plugin_info['filename'] = plugin_name
-                plugin_info['count'] = 0
-                plugin_info_list.append(plugin_info)
-            except Exception, e:
-                logging.error(e)
+            if ',' in select_plugins:
+                select_plugins = select_plugins.replace(' ','').replace('\'','')
+                script_plugin = select_plugins.split(',')
+            else:
+                if select_plugins != 'None':
+                    script_plugin = []
+                    script_plugin.append(select_plugins)
+                else:
+                    script_plugin = []
+        if script_plugin:
+            for plugin_name in script_plugin:
+                try:
+                    imported_plugin = __import__(plugin_name)
+                    imported_plugins.append(imported_plugin)
+                except Exception, e:
+                    logging.error(e)
+                    output('%s >>>> Unknow Plugin'%plugin_name, 'red')
+                    print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
+                    return
+        try:
+            mas = masscan.PortScanner()
+        except masscan.PortScannerError:
+            output('Please Install Masscan', 'red')
+            return
+        except:
+            output("Start Masscan Error", 'red')
+            return
+
+        output('SET TIME_OUT=%d THREAD_COUNT=%d Masscan_version=%s PLUGIN_COUNT=%d'%(args.T,args.t,mas.masscan_version,len(list(script_plugin))),'green')
         for ip in get_ip_list(args.i):
             output('Starting scan target:%s'%ip, 'green')
             ResultOutput[ip] = []
             port_queue = Queue.Queue()
-            if type(ports) == list:
-                p = xrange(int(ports[0]),int(ports[1]))
-            if type(ports) == str:
-                if ',' in ports:
-                    p = ports.split(',')
-                elif ports.isdigit():
-                    p =[ports]
-            for port in p:
-                port_queue.put(port)
+            try:
+                mas.scan(ip, ports=args.p, arguments='--rate=5000 --banners -Pn')
+            except Exception,e:
+                logging.error(e)
+                output('Complete scan target:%s'%ip, 'green')
+                continue
+            result = mas.scan_result['scan'][ip]
+            if result.has_key('tcp'):
+                for tcp_port in  result['tcp']:
+                    try:
+                        if result['tcp'][tcp_port]['services'][0].has_key('name'):
+                            banner = result['tcp'][tcp_port]['services'][0]['name']
+                    except Exception,e:
+                        logging.error(e)
+                        banner = None
+                    port_queue.put(['tcp',banner,tcp_port])
+            if result.has_key('udp'):
+                for udp_port in  result['udp']:
+                    try:
+                        if result['udp'][udp_port]['services'][0].has_key('name'):
+                            banner = result['udp'][udp_port]['services'][0]['name']
+                    except Exception,e:
+                        logging.error(e)
+                        banner = None
+                    port_queue.put(['udp',banner,tcp_port])
             threads = []
             for i in xrange(THREAD_COUNT):
                 scan_threads=Scan(ip,port_queue)
