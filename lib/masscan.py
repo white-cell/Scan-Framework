@@ -68,7 +68,7 @@ class PortScanner(object):
 
     """
 
-    def __init__(self, masscan_search_path=('./masscan/masscan','./masscan/masscan.exe','masscan', '/usr/bin/masscan', '/usr/local/bin/masscan', '/sw/bin/masscan', '/opt/local/bin/masscan')):
+    def __init__(self, masscan_search_path=('./masscan/masscan.exe','masscan', '/usr/bin/masscan', '/usr/local/bin/masscan', '/bin/masscan', '/sbin/masscan')):
         """
         Initialize PortScanner module
 
@@ -100,9 +100,7 @@ class PortScanner(object):
         # This is for Mac OSX. When idle3 is launched from the finder, PATH is not set so masscan was not found
         for masscan_path in masscan_search_path:
             try:
-                if sys.platform.startswith('freebsd') \
-                   or sys.platform.startswith('linux') \
-                   or sys.platform.startswith('darwin'):
+                if sys.platform.startswith('freebsd') or sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
                     p = subprocess.Popen([masscan_path, '-V'],
                                          bufsize=10000,
                                          stdout=subprocess.PIPE,
@@ -294,7 +292,7 @@ class PortScanner(object):
                 if len(line) > 0:
                     rgw = regex_warning.search(line)
                     if rgw is not None:
-                        # sys.stderr.write(line+os.linesep)
+                        sys.stderr.write(line+os.linesep)
                         masscan_warn_keep_trace.append(line+os.linesep)
                     else:
                         # raise PortScannerError(masscan_err)
@@ -316,9 +314,9 @@ class PortScanner(object):
             dom = ET.fromstring(self._masscan_last_output)
         except Exception:
             if len(masscan_err) > 0:
-                raise PortScannerError(masscan_err)
+                raise PortScannerError('No Port Open')
             else:
-                raise PortScannerError(self._masscan_last_output)
+                raise PortScannerError('No Port Open')
 
         # masscan command line
         scan_result['masscan'] = {

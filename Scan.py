@@ -248,7 +248,7 @@ def start():
             ResultOutput[ip] = []
             port_queue = Queue.Queue()
             try:
-                mas.scan(ip, ports=args.p, arguments='--rate=5000 --banners -Pn')
+                mas.scan(ip, ports=args.p, arguments='--rate=5000 -sS --randomize-hosts --banners -Pn --wait '+str(TIME_OUT))
             except Exception,e:
                 logging.error(e)
                 output('Complete scan target:%s'%ip, 'green')
