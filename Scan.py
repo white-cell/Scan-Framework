@@ -77,6 +77,7 @@ class Scan(threading.Thread):
                 setattr(plugin, "TIME_OUT", TIME_OUT)
                 setattr(plugin,"PORT",port)
                 RETURN = plugin.exploit(self.ip)
+                logging.error(str(plugin)+self.ip+":"+str(port)+"进行中")
                 if RETURN and type(RETURN)==list:
                     for i in RETURN:
                         self.Reslut.append(i)
@@ -84,6 +85,8 @@ class Scan(threading.Thread):
                 elif RETURN and type(RETURN)==str:
                     self.Reslut.append(RETURN)
                     output(RETURN,'red',attrs=['bold'])
+                else:
+                    logging.error(RETURN)
 
     def getTitle(self,url):
         try:
@@ -155,6 +158,7 @@ def output(info, color='white', on_color=None, attrs=None):
     Lock.acquire()
     print colored("[%s] %s"%(time.strftime('%H:%M:%S',time.localtime(time.time())), info),color, on_color, attrs)
     Lock.release()
+
 def KeyboardInterrupt(signum,frame):
     output('[ERROR] user quit','red')
     print '\n[*] shutting down at %s\n'%time.strftime('%H:%M:%S',time.localtime(time.time()))
@@ -248,9 +252,10 @@ def start():
             ResultOutput[ip] = []
             port_queue = Queue.Queue()
             try:
-                mas.scan(ip, ports=args.p, arguments='--rate=5000 -sS --randomize-hosts --banners -Pn --wait '+str(TIME_OUT))
+                mas.scan(ip, ports=args.p, arguments='--rate=2000 -sS --randomize-hosts --banners -Pn --wait '+str(TIME_OUT))#rate根据实际网络情况调整
             except Exception,e:
                 logging.error(e)
+                logging.error('请确认libpcap-devel、libcap是否安装。')
                 output('Complete scan target:%s'%ip, 'green')
                 continue
             result = mas.scan_result['scan'][ip]
@@ -275,7 +280,7 @@ def start():
             threads = []
             for i in xrange(THREAD_COUNT):
                 scan_threads=Scan(ip,port_queue)
-                scan_threads.setDaemon(True)#为了响应Ctrl+C
+                scan_threads.setDaemon(True)
                 scan_threads.start()
                 threads.append(scan_threads)
             for thread in threads:
