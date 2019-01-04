@@ -25,3 +25,6 @@ USER_AGENT_LIST = [
 
 #保存文件名
 OUTPUT_FILE = 'result.txt'
+
+#超时时间
+TIME_OUT = 5
