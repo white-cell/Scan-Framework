@@ -17,8 +17,10 @@ import random
 import logging
 import signal
 import argparse
+import ssl
 from lib.termcolor import colored
 from bs4 import BeautifulSoup
+from OpenSSL import crypto
 from lib.config import (
     PASSWORD_DIC, MY_PROXY, USER_AGENT_LIST, OUTPUT_FILE
 )
@@ -66,7 +68,14 @@ class Scan(threading.Thread):
                 if httpsTitle:
                     domain = url2
                     title = httpsTitle
-                    output("WEB %s >>>> %s"%(domain,title),'green')
+                    try:
+                        raw_cert = ssl.get_server_certificate((str(ip), str(port)))
+                        x509 = crypto.load_certificate(crypto.FILETYPE_PEM, raw_cert)
+                        cert_domain = x509.get_subject().CN
+                        output("WEB %s >>>> %s(%s)" % (domain, title, cert_domain), 'green')
+                    except socket.error, e:
+                        logging.error(e)
+                        output("WEB %s >>>> %s" % (domain, title), 'green')
                     self.Reslut.append('OPEN %s >>>> %s|%s'%(port,domain,title.encode('utf-8')))
                     self.domain.append(domain)
             except socket.error,e:
@@ -109,7 +118,7 @@ class Scan(threading.Thread):
                 logging.error(e)
                 title = '标题为空'
         return title
-        
+
 
 #转换ip格式
 def get_ip_list(ip):
