@@ -69,7 +69,7 @@ class Scan(threading.Thread):
                     domain = url2
                     title = httpsTitle
                     try:
-                        raw_cert = ssl.get_server_certificate((str(ip), str(port)))
+                        raw_cert = ssl.get_server_certificate((str(self.ip), str(port)))
                         x509 = crypto.load_certificate(crypto.FILETYPE_PEM, raw_cert)
                         cert_domain = x509.get_subject().CN
                         output("WEB %s >>>> %s(%s)" % (domain, title, cert_domain), 'green')
